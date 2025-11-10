@@ -6,19 +6,19 @@ import time
 # Flight computer / structures data
 # -----------------------------
 # Data from flight computer
-altitude = 33200 #m
-velocity = 152.4 #m/s
+altitude = 100 #m
+velocity = 90 #m/s
 pitch = 2 #degrees
 # Data from Structures
-Cd_ref = 0.5937
+Cd_ref = 1.3
 min_area = 0
-max_area = 0.2
-width = 0.1
-mass = 36
-CdA_r = 1.6327
-target_apogee = 33528  # meters (~110,000 ft)
-dt_control = 0.1       # control timestep
-n_deployments = 10     # discrete deployment steps
+max_area = 0.001
+width = 0.04
+mass = 6
+CdA_r = 0.00453
+target_apogee = 420 # meters
+dt_control = 0.1      # control timestep
+n_deployments = 10    # discrete deployment steps
 
 # -----------------------------
 # Atmosphere properties
@@ -120,6 +120,13 @@ predicted_apogees = predict_apogee_vectorized(
     altitude, velocity, pitch, mass, CdA_r, CdA_airbrakes_table, dt=0.02, max_time=500.0
 )
 
+# Find the maximum predicted apogee
+max_predicted = max(predicted_apogees)
+# Only adjust if max predicted is below the target
+if max_predicted < target_apogee:
+    adjusted_target = (max_predicted // 100) * 100
+    target_apogee = adjusted_target
+
 # Choose deployment fraction closest to target
 idx_best = np.argmin(np.abs(predicted_apogees - target_apogee))
 best_fraction = deployment_fractions[idx_best]
@@ -132,6 +139,7 @@ servo_command = servo_min + best_fraction * (servo_max - servo_min)
 
 end_time = time.time()
 
+print(f"Target Apogee: {target_apogee}")
 print(f"Best airbrakes deployment fraction: {best_fraction*100:.1f}%")
 print(f"Predicted apogee: {best_apogee:.1f} m")
 print(f"Servo command: {servo_command:.1f}°")
