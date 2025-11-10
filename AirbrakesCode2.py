@@ -6,19 +6,19 @@ import time
 # Flight computer / structures data
 # -----------------------------
 # Data from flight computer
-altitude = 100 #m
-velocity = 90 #m/s
+altitude = 90 #m
+velocity = 70 #m/s
 pitch = 2 #degrees
 # Data from Structures
 Cd_ref = 1.3
 min_area = 0
-max_area = 0.001
+max_area = 0.0015
 width = 0.04
 mass = 6
 CdA_r = 0.00453
 target_apogee = 420 # meters
 dt_control = 0.1      # control timestep
-n_deployments = 10    # discrete deployment steps
+n_deployments = 100    # discrete deployment steps
 
 # -----------------------------
 # Atmosphere properties
@@ -124,7 +124,7 @@ predicted_apogees = predict_apogee_vectorized(
 max_predicted = max(predicted_apogees)
 # Only adjust if max predicted is below the target
 if max_predicted < target_apogee:
-    adjusted_target = (max_predicted // 100) * 100
+    adjusted_target = (max_predicted // 50) * 50
     target_apogee = adjusted_target
 
 # Choose deployment fraction closest to target
