@@ -194,7 +194,7 @@ for step in range(max_control_steps):
         if pred_ap < target_apogee:
             target_apogee = int(pred_ap // 10) * 10
     else:
-        if pred_ap < target_apogee - 10:
+        if pred_ap < target_apogee - 25:
             target_apogee = int(pred_ap // 10) * 10
 
     print(f"\nCurrent target_apogee: {target_apogee:.1f} m")
