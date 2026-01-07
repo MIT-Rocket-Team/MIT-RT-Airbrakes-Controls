@@ -27,7 +27,7 @@ alt_data = []
 vz_data = []
 aoa_data = []
 
-with open('/Users/sydneyparke/Documents/RT-MPC/zephtestdata.csv', 'r') as f:
+with open('zephtestdata.csv', 'r') as f:
     reader = csv.reader(f)
     for row in reader:
         t, alt, vz, aoa = map(float, row[:4])  # ignore extra columns

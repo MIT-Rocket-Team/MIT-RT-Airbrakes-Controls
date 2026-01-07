@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # ============================================================
 # USER CONFIGURATION
 # ============================================================
-csv_path = '/Users/sydneyparke/Documents/MIT/Rocket Team/xanthus.csv'
+csv_path = 'xanthus.csv'
 
 unit_system = "metric"     # 'imperial' or 'metric'
 airbrake_areas = [0.004, 0.001, 0.015]  # example areas in m²
