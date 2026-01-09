@@ -14,13 +14,13 @@ max_area = 0.00165
 width = 0.066
 mass = 37.65
 CdA_r = 0.00958
-target_apogee = 5000
+target_apogee = 5600
 
 # control params
-dt_control = 0.1
-n_deployments = 50
+dt_control = 0.025
+n_deployments = 4
 current_fraction = 0.0
-max_change = 0.25
+max_change = 0.2
 first_run = True
 run_one_step_only = False  # <--- Set True to run only one MPC step
 
@@ -177,7 +177,7 @@ def make_CdA_schedule_from_sequence(base_fraction, seq_fractions, dt_control):
 # -----------------------------
 # MPC loop
 # -----------------------------
-horizon = 6
+horizon = 7
 K_options = 4
 max_control_steps = 1
 tolerance = 1.0

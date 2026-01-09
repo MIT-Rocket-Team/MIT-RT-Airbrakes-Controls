@@ -1,0 +1,173 @@
+\documentclass{amsdtx}
+\usepackage[margin=.75in]{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{eqnarray,amsmath}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{cancel}
+\usepackage{multicol}
+\usepackage[Glenn]{fncychap}
+%\usepackage{hyperref}
+\definecolor{b}{HTML}{3C78D8}
+\definecolor{g}{HTML}{38761D}
+\definecolor{r}{HTML}{AB0000}
+
+\usepackage{listings}
+
+\definecolor{codegreen}{HTML}{38761D}
+\definecolor{codeblue}{HTML}{000076}
+\definecolor{codegray}{rgb}{0.2,0.2,0.2}
+\definecolor{codepurple}{HTML}{AB0000}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{white},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codepurple},
+    numberstyle=\ttfamily\scriptsize\color{codeblue},
+    stringstyle=\color{b},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4
+}
+\lstset{style=mystyle}
+
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\usepackage{bm}
+
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+\newcolumntype{N}{@{}m{0pt}@{}}
+
+\newcommand{\vfs}[1]{\ensuremath \textbf{\textit{f}}\kern-0.1cm_{s_{#1}}}
+\newcommand{\fs}[1]{\ensuremath f\kern-0.07cm_{s_{#1}}}
+\newcommand{\F}{\ensuremath \textbf{F}\kern-0.07cm}
+\newcommand{\cc}{\ensuremath\mu_{cc}}
+\newcommand{\cg}{\ensuremath\mu_{cg}}
+\usepackage{enumitem}
+
+\usepackage[T2A,OT1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+
+\title{\sc Airbrakes Control Algorithm}
+\author{\sc Marc D Nichitiu, Akash Krishna | 8 January 2026}
+\date{\sc MIT Rocket Team Simulations}
+\begin{document}
+\maketitle    
+\section{Abstract}
+We wish to choose a target apogee altitude using a variable-area airbrake system. Airbrakes are deployed using a servomotor that can expose a particular fraction of the Airbrake area to the freestream, thereby allowing the drag to depend on time. 
+
+This algorithm seeks to enable a rocket having some default without-Airbrakes apogee altitude to lower this altitude to a close but particular height, to be chosen by the designer. Overall flow is as follows:
+\begin{enumerate}
+	\item A linear approximation (coefficient $k$) of the vertical velocity of the rocket as a function of time is characterized.
+	\item A non-Airbrakes apogee altitude is determined according to this approximation.
+	\item The difference between default apogee altitude and desired apogee altitude is calculated according to the pre-determined altitude choice. Let us denote it $\delta x$.
+	\item A difference in the velocity decay slope, $\delta k$, is calculated based on $\delta x$.
+	\item A difference in the drag $\dot x^2$ coefficient, $\delta B$, is calculated according to $\delta k$.
+	\item The Airbrakes' deployed area $A(t)$ is calculated from $\delta B$. 
+	\item Once Airbrakes are activated, they are to be extended according to $A(t)$, with a PIDF controller on position accuracy and acceleration.
+\end{enumerate}
+
+\section{Derivation: Perturbation Theory}
+We observe from simulations and real launches that after engine burnout, velocity is roughly linear, following
+\begin{align}
+	\dot x(t) = -kt + v_0
+\end{align}
+where $k$ and $v_0$ are obtained from the rocket onboard sensors: a linear fit to several $\dot x(t)$ datapoints quickly obtains these.
+
+This must satisfy the differential equation obtained from Newton's Second Law:
+\begin{align}
+	m\ddot x = \sum F_i = -mg -\frac{C_DA\rho \dot x^2}{2}
+\end{align}
+We write the coefficient of $\dot x^2$ as some $-mB$:
+\begin{align}
+	\ddot x = -g -B\dot x^2
+\end{align}
+We now substitute $\ddot x = -k$ and $\dot x = -kt+v_0$:
+\begin{align}
+	k = g + B(v_0-kt)^2
+\end{align}
+We wish to see how a perturbation $\delta k$ constrains a perturbation $\delta B$, removing all second/third order terms:
+\begin{align}
+	k+\delta k &= g + (B+\delta B)(v_0-(k+\delta k)t)^2 \\
+	\Rightarrow \frac{k+\delta k-g}{B+\delta B} &= v_0^2-2(k+\delta k)tv_0+(k+\delta k)^2t^2 \\
+	&= v_0^2 - 2ktv_0 - 2\delta kt v_0 + (k^2 + 2k\delta k + \cancel{\delta k^2})t^2 \\
+	&= v_0^2 - 2ktv_0 - 2\delta kt v_0 + k^2t^2 + 2k\delta k t^2 \\
+	\Rightarrow k+\delta k-g &= (B+\delta B)\left(v_0^2 - 2ktv_0 - 2\delta kt v_0 + k^2t^2 + 2k\delta k t^2\right) \\
+	&= Bv_0^2 - 2Bktv_0 - 2B\delta kt v_0 + Bk^2t^2 + 2Bk\delta k t^2 \\
+	&+ \delta Bv_0^2 - 2\delta Bktv_0 - \cancel{2\delta B\delta kt v_0} + {\delta B k^2t^2} + \cancel{2\delta Bk\delta k t^2}
+\end{align}
+We factor out $\delta B$:
+\begin{align}
+	\delta B\left(v_0^2 -2ktv_0+k^2t^2\right) + Bv_0^2 - 2Bktv_0 - 2B\delta ktv_0 + Bk^2t^2+2Bk\delta kt^2 = k+\delta k - g
+\end{align}
+Solving for $\delta B$ function of $\delta k$ gives
+\begin{align}
+	\delta B &= \frac{k+\delta k - g}{v_0^2 -2ktv_0+k^2t^2} - B\frac{v_0^2 - 2ktv_0  + k^2t^2 + 2k\delta kt^2- 2\delta ktv_0}{v_0^2 -2ktv_0+k^2t^2} \\
+	&= \frac{k+\delta k - g}{v_0^2 -2ktv_0+k^2t^2} - B\left(1+2t\delta k\frac{kt- v_0}{(kt-v_0)^2}\right) \\
+	&= \frac{k+\delta k - g}{(kt-v_0)^2} - B\left(1+\frac{2t\delta k}{kt-v_0}\right) \\
+\end{align}
+We had defined $B$ as 
+\begin{align}
+	B = \frac{C_DA_{\rm ref}\rho}{2m}
+\end{align}
+Thus, $\delta B$ is
+\begin{align}
+	\delta B = \frac{C_{D_{\rm airbrakes}}A(t)\rho}{2m}
+\end{align}
+Thus, the airbrakes area is 
+\begin{align}
+	A(t) = \frac{2m}{\rho C_{D_{\rm airbrakes}}}\delta B
+\end{align}
+The max apogee altitude is found from the linear velocity approximation: 
+\begin{align}
+	x_{\rm apog} = -\frac{k}{2}t_{\rm apog}^2 + v_0t_{\rm apog} + x_0 = \frac{v_0^2}{2k} + x_0
+\end{align}
+Thus, the perturbation is
+\begin{align}
+	\delta x = \frac{\partial}{\partial k}\left(\frac{v_0^2}{2k} + x_0\right)\delta k = -\delta k\frac{v_0^2}{2k^2}
+\end{align}
+which gives
+\begin{align}
+	\delta k = -\frac{2k^2}{v_0^2}\delta x
+\end{align}
+Thus, for a desired apogee altitude $x_d$, we have
+\begin{align}
+	\delta x \equiv x_d - x_{\rm apog} = x_d - {v_0^2}/{2k} + x_0
+\end{align}
+and so
+\begin{align}
+	A(t) &= \frac{2m}{\rho C_{D_{\rm airbrakes}}}\delta B  \\
+	&= \frac{2m}{\rho C_{D_{\rm airbrakes}}}\left(\frac{k+\delta k - g}{(kt-v_0)^2} - B\left(1+\frac{2t\delta k}{kt-v_0}\right)\right) \\
+	&= \frac{2m}{\rho C_{D_{\rm airbrakes}}}\left(\frac{k-\frac{2k^2}{v_0^2}\delta x - g}{(kt-v_0)^2} - B\left(1+\frac{2t\left(-\frac{2k^2}{v_0^2}\delta x\right)}{kt-v_0}\right)\right) \\
+	&= \frac{2m}{\rho C_{D_{\rm airbrakes}}}\left(\frac{-{2k^2}\delta x +v_0^2(k- g)}{{v_0^2}(kt-v_0)^2} - B\left(1+\frac{-{4tk^2}\delta x}{{v_0^2}(kt-v_0)}\right)\right) \\
+	\Rightarrow A(t) &= \frac{2m}{\rho C_{D_{\rm airbrakes}}}\left(\frac{-{2k^2}(x_d - {v_0^2}/{2k} + x_0) +v_0^2(k- g)}{{v_0^2}(kt-v_0)^2} - B\left(1+\frac{-{4tk^2}(x_d - {v_0^2}/{2k} + x_0)}{{v_0^2}(kt-v_0)}\right)\right)	
+\end{align}
+Thus, given a $k$, $v_0$ obtained from a linear fit to $\dot x(t)$, an $x_0$ from matching to a locally-averaged altitude point, a $B$ from the drag of the rocket without Airbrakes, and $\rho$ and $C_{D_{\rm airbrakes}}$ hardcoded, the $A(t)$ function can be fully obtained. The formula is not very computationally intensive.
+\section{Implementation, Characterizations}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
